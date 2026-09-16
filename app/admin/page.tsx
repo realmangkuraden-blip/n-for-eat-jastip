@@ -1,0 +1,27 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+
+const statuses = ['pending_payment','payment_submitted','payment_verified','processing','shopping','purchased','delivering','completed','cancelled']
+const labels: Record<string,string> = {pending_payment:'Menunggu pembayaran',payment_submitted:'Bukti pembayaran dikirim',payment_verified:'Pembayaran terverifikasi',processing:'Diproses',shopping:'Sedang dibelikan',purchased:'Sudah dibeli',delivering:'Dikirim',completed:'Selesai',cancelled:'Dibatalkan'}
+const rupiah=(n:number)=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n)
+
+type Order={id:string;order_number:string;status:string;customer_name:string;customer_phone:string;delivery_city:string;delivery_address:string;total:number;created_at:string}
+
+export default function AdminDashboard(){
+ const supabase=createClient(); const router=useRouter(); const [user,setUser]=useState<any>(null); const [admin,setAdmin]=useState<any>(null); const [orders,setOrders]=useState<Order[]>([]); const [filter,setFilter]=useState('all'); const [loading,setLoading]=useState(true); const [msg,setMsg]=useState('')
+ useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser(); if(!user){router.replace('/admin/login');return} const {data:admin}=await supabase.from('admin_users').select('role,is_active').eq('user_id',user.id).maybeSingle(); if(!admin?.is_active){await supabase.auth.signOut();router.replace('/admin/login');return} setUser(user);setAdmin(admin);await loadOrders()})()},[])
+ async function loadOrders(){setLoading(true);let q=supabase.from('orders').select('id,order_number,status,customer_name,customer_phone,delivery_city,delivery_address,total,created_at').order('created_at',{ascending:false}).limit(100);if(filter!=='all')q=q.eq('status',filter);const {data,error}=await q;if(error)setMsg(error.message);else setOrders((data||[]) as Order[]);setLoading(false)}
+ async function changeStatus(o:Order,status:string){if(status===o.status)return; setMsg('Menyimpan…'); const {error}=await supabase.from('orders').update({status}).eq('id',o.id); if(error){setMsg(error.message);return} const {error:historyError}=await supabase.from('order_status_history').insert({order_id:o.id,status,note:`Status diubah dari dashboard admin`,changed_by:user.id}); if(historyError){setMsg(historyError.message);return} setMsg(`Status ${o.order_number} diperbarui.`);loadOrders()}
+ async function logout(){await supabase.auth.signOut();router.replace('/admin/login')}
+ if(!user||!admin)return <main className="container py-20 text-center">Memuat dashboard…</main>
+ const counts=orders.reduce((a,o)=>{a[o.status]=(a[o.status]||0)+1;return a},{} as Record<string,number>)
+ return <main className="container py-10"><div className="flex flex-col justify-between gap-4 md:flex-row md:items-center"><div><p className="text-sm font-bold text-[#e97827]">N FOR EAT JASTIP · ADMIN</p><h1 className="text-3xl font-black">Dashboard</h1><p className="text-sm opacity-60">Login sebagai {user.email}</p></div><button onClick={logout} className="btn border">Keluar</button></div>
+ <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Stat title="Total tampil" value={orders.length}/><Stat title="Menunggu bayar" value={counts.pending_payment||0}/><Stat title="Diproses" value={(counts.processing||0)+(counts.shopping||0)}/><Stat title="Selesai" value={counts.completed||0}/></div>
+ <div className="mt-8 flex flex-wrap gap-2"><Link href="/admin/products" className="btn border">Kelola Produk</Link><Link href="/admin/categories" className="btn border">Kategori</Link><button onClick={loadOrders} className="btn border">Refresh</button></div>
+ <section className="mt-6 card overflow-hidden"><div className="flex flex-col gap-3 border-b p-5 md:flex-row md:items-center md:justify-between"><h2 className="text-xl font-black">Pesanan Masuk</h2><select className="rounded-xl border p-2" value={filter} onChange={e=>{setFilter(e.target.value);setTimeout(loadOrders,0)}}><option value="all">Semua status</option>{statuses.map(s=><option key={s} value={s}>{labels[s]}</option>)}</select></div>{msg&&<p className="px-5 pt-4 text-sm opacity-70">{msg}</p>}{loading?<p className="p-5">Memuat…</p>:orders.length===0?<p className="p-5 opacity-60">Belum ada pesanan.</p>:<div className="divide-y">{orders.map(o=><div key={o.id} className="p-5"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><b>{o.order_number}</b><p className="text-sm">{o.customer_name} · {o.customer_phone}</p><p className="text-sm opacity-60">{o.delivery_city} · {new Date(o.created_at).toLocaleString('id-ID')}</p></div><div className="flex items-center gap-3"><b>{rupiah(Number(o.total))}</b><select className="rounded-xl border p-2 text-sm" value={o.status} onChange={e=>changeStatus(o,e.target.value)}>{statuses.map(s=><option key={s} value={s}>{labels[s]}</option>)}</select></div></div><details className="mt-3 text-sm"><summary className="cursor-pointer font-bold">Detail alamat & catatan</summary><p className="mt-2 opacity-75">{o.delivery_address}</p></details></div>)}</div>}</section></main>
+}
+function Stat({title,value}:{title:string;value:number}){return <div className="card p-5"><p className="text-sm opacity-60">{title}</p><p className="mt-1 text-3xl font-black">{value}</p></div>}
