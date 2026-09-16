@@ -1,64 +1,17 @@
 'use client';
-
 import { useEffect, useMemo, useState } from 'react';
 import { ShoppingBag, Search, Plus, Minus, Trash2 } from 'lucide-react';
-
-type Product = {
-  id: string;
-  name: string;
-  description: string | null;
-  selling_price: number;
-  jastip_fee: number;
-  is_available: boolean;
-  image_url: string | null;
-  is_featured: boolean;
-  category: { name: string; slug: string } | null;
-};
-
-const rupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
-const emojiFor = (category?: string | null) => ({ Makanan: '🍜', Snack: '🍟', Dessert: '🍰', Minuman: '🧋', 'Paket Hemat': '🍱', Promo: '🔥' } as Record<string, string>)[category || ''] || '🍴';
-
-export default function MenuClient() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [q, setQ] = useState('');
-  const [cat, setCat] = useState('Semua');
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetch('/api/products')
-      .then(r => r.ok ? r.json() : Promise.reject(new Error('Gagal memuat menu')))
-      .then(setProducts)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const cats = useMemo(() => ['Semua', ...Array.from(new Set(products.map(p => p.category?.name).filter(Boolean) as string[]))], [products]);
-  const filtered = useMemo(() => products.filter(p => (cat === 'Semua' || p.category?.name === cat) && p.name.toLowerCase().includes(q.toLowerCase())), [products, q, cat]);
-  const items = Object.entries(cart).map(([id, qty]) => ({ p: products.find(x => x.id === id)!, qty })).filter(x => x.p);
-  const subtotal = items.reduce((s, x) => s + Number(x.p.selling_price) * x.qty, 0);
-  const jastip = items.reduce((s, x) => s + Number(x.p.jastip_fee) * x.qty, 0);
-  const total = subtotal + jastip;
-  const add = (id: string) => setCart(c => ({ ...c, [id]: (c[id] || 0) + 1 }));
-  const dec = (id: string) => setCart(c => { const n = (c[id] || 0) - 1; const x = { ...c }; if (n <= 0) delete x[id]; else x[id] = n; return x; });
-  const checkout = () => {
-    const text = `Halo N for Eat Jastip 👋\n\nSaya ingin melakukan pemesanan.\n\nPesanan:\n${items.map(x => `${x.qty}x ${x.p.name} - ${rupiah(Number(x.p.selling_price) * x.qty)}`).join('\n')}\n\nSubtotal: ${rupiah(subtotal)}\nBiaya Jastip: ${rupiah(jastip)}\nTotal: ${rupiah(total)}\n\nNama:\nAlamat:\nCatatan:`;
-    const phone = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '6280000000000';
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  return <div className="container py-10">
-    <div className="mb-8"><h1 className="text-4xl font-black">Menu Jastip 🍴</h1><p className="mt-2 opacity-70">Menu sekarang diambil langsung dari database N for Eat.</p></div>
-    <div className="mb-6 flex flex-col gap-3 md:flex-row"><div className="flex flex-1 items-center gap-2 rounded-full border bg-white px-4"><Search size={18}/><input className="w-full bg-transparent py-3 outline-none" placeholder="Cari makanan..." value={q} onChange={e=>setQ(e.target.value)}/></div><div className="flex gap-2 overflow-auto">{cats.map(c=><button key={c} onClick={()=>setCat(c)} className={`rounded-full px-4 py-2 text-sm font-bold ${cat===c?'bg-[#e97827] text-white':'border bg-white'}`}>{c}</button>)}</div></div>
-    {loading && <div className="card p-8 text-center">Memuat menu...</div>}
-    {error && <div className="card p-8 text-center text-red-600">{error}</div>}
-    {!loading && !error && filtered.length === 0 && <div className="card p-8 text-center">Belum ada menu yang tersedia.</div>}
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{filtered.map(p=><ProductCard key={p.id} p={p} onAdd={()=>add(p.id)}/>)}</div>
-    {items.length>0 && <aside className="fixed bottom-5 left-1/2 z-30 w-[calc(100%-24px)] max-w-lg -translate-x-1/2 rounded-3xl border bg-white p-5 shadow-2xl"><div className="mb-3 flex items-center justify-between"><b className="flex items-center gap-2"><ShoppingBag size={19}/> Keranjang</b><span>{rupiah(total)}</span></div>{items.map(x=><div key={x.p.id} className="flex items-center justify-between border-t py-2 text-sm"><span>{x.p.name} × {x.qty}</span><span className="flex items-center gap-2"><button onClick={()=>dec(x.p.id)} className="rounded-full border p-1"><Minus size={13}/></button><button onClick={()=>add(x.p.id)} className="rounded-full border p-1"><Plus size={13}/></button><button onClick={()=>setCart(c=>{const y={...c};delete y[x.p.id];return y})}><Trash2 size={15}/></button></span></div>)}<button onClick={checkout} className="btn btn-primary mt-3 w-full">💬 Checkout via WhatsApp</button></aside>}
-  </div>;
-}
-
-function ProductCard({p,onAdd}:{p:Product;onAdd:()=>void}) {
-  return <article className="card overflow-hidden"><div className="flex h-44 items-center justify-center bg-[#fff1dc] text-7xl">{p.image_url ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover"/> : emojiFor(p.category?.name)}</div><div className="p-5"><div className="mb-1 text-xs font-bold uppercase opacity-50">{p.category?.name || 'Menu'}</div><h2 className="text-xl font-black">{p.name}</h2><p className="my-2 text-sm opacity-70">{p.description}</p><div className="flex items-center justify-between"><b className="text-lg text-[#e97827]">{rupiah(Number(p.selling_price) + Number(p.jastip_fee))}</b><button onClick={onAdd} disabled={!p.is_available} className="btn btn-primary gap-1 disabled:opacity-40"><Plus size={17}/> Tambah</button></div></div></article>;
+import Link from 'next/link';
+type Product={id:string;name:string;description:string|null;selling_price:number;jastip_fee:number;is_available:boolean;image_url:string|null;category:{name:string;slug:string}|null};
+const rupiah=(n:number)=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
+const emojiFor=(c?:string|null)=>({Makanan:'🍜',Snack:'🍟',Dessert:'🍰',Minuman:'🧋','Paket Hemat':'🍱',Promo:'🔥'} as Record<string,string>)[c||'']||'🍴';
+export default function MenuClient(){
+ const [products,setProducts]=useState<Product[]>([]),[q,setQ]=useState(''),[cat,setCat]=useState('Semua'),[cart,setCart]=useState<Record<string,number>>({}),[loading,setLoading]=useState(true),[error,setError]=useState('');
+ useEffect(()=>{const raw=localStorage.getItem('nfe-cart');if(raw)try{setCart(JSON.parse(raw))}catch{};fetch('/api/products').then(r=>r.ok?r.json():Promise.reject(new Error('Gagal memuat menu'))).then(setProducts).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
+ useEffect(()=>{localStorage.setItem('nfe-cart',JSON.stringify(cart))},[cart]);
+ const cats=useMemo(()=>['Semua',...Array.from(new Set(products.map(p=>p.category?.name).filter(Boolean) as string[]))],[products]);
+ const filtered=useMemo(()=>products.filter(p=>(cat==='Semua'||p.category?.name===cat)&&p.name.toLowerCase().includes(q.toLowerCase())),[products,q,cat]);
+ const items=Object.entries(cart).map(([id,qty])=>({p:products.find(x=>x.id===id)!,qty})).filter(x=>x.p),subtotal=items.reduce((s,x)=>s+Number(x.p.selling_price)*x.qty,0),jastip=items.reduce((s,x)=>s+Number(x.p.jastip_fee)*x.qty,0),total=subtotal+jastip;
+ const add=(id:string)=>setCart(c=>({...c,[id]:(c[id]||0)+1})); const dec=(id:string)=>setCart(c=>{const n=(c[id]||0)-1,x={...c};if(n<=0)delete x[id];else x[id]=n;return x});
+ return <div className="container py-10"><div className="mb-8"><h1 className="text-4xl font-black">Menu Jastip 🍴</h1><p className="mt-2 opacity-70">Menu sekarang diambil langsung dari database N for Eat.</p></div><div className="mb-6 flex flex-col gap-3 md:flex-row"><div className="flex flex-1 items-center gap-2 rounded-full border bg-white px-4"><Search size={18}/><input className="w-full bg-transparent py-3 outline-none" placeholder="Cari makanan..." value={q} onChange={e=>setQ(e.target.value)}/></div><div className="flex gap-2 overflow-auto">{cats.map(c=><button key={c} onClick={()=>setCat(c)} className={`rounded-full px-4 py-2 text-sm font-bold ${cat===c?'bg-[#e97827] text-white':'border bg-white'}`}>{c}</button>)}</div></div>{loading&&<div className="card p-8 text-center">Memuat menu...</div>}{error&&<div className="card p-8 text-center text-red-600">{error}</div>}{!loading&&!error&&filtered.length===0&&<div className="card p-8 text-center">Belum ada menu yang tersedia.</div>}<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{filtered.map(p=><article className="card overflow-hidden" key={p.id}><div className="flex h-44 items-center justify-center bg-[#fff1dc] text-7xl">{p.image_url?<img src={p.image_url} alt={p.name} className="h-full w-full object-cover"/>:emojiFor(p.category?.name)}</div><div className="p-5"><div className="mb-1 text-xs font-bold uppercase opacity-50">{p.category?.name||'Menu'}</div><h2 className="text-xl font-black">{p.name}</h2><p className="my-2 text-sm opacity-70">{p.description}</p><div className="text-xs opacity-60">Harga {rupiah(Number(p.selling_price))} · Jastip {rupiah(Number(p.jastip_fee))}</div><div className="mt-3 flex items-center justify-between"><b className="text-lg text-[#e97827]">{rupiah(Number(p.selling_price)+Number(p.jastip_fee))}</b><button onClick={()=>add(p.id)} disabled={!p.is_available} className="btn btn-primary gap-1 disabled:opacity-40"><Plus size={17}/> Tambah</button></div></div></article>)}</div>{items.length>0&&<aside className="fixed bottom-5 left-1/2 z-30 w-[calc(100%-24px)] max-w-lg -translate-x-1/2 rounded-3xl border bg-white p-5 shadow-2xl"><div className="mb-3 flex items-center justify-between"><b className="flex items-center gap-2"><ShoppingBag size={19}/> Keranjang</b><span>{rupiah(total)}</span></div>{items.map(x=><div key={x.p.id} className="flex items-center justify-between border-t py-2 text-sm"><span>{x.p.name} × {x.qty}</span><span className="flex items-center gap-2"><button onClick={()=>dec(x.p.id)} className="rounded-full border p-1"><Minus size={13}/></button><button onClick={()=>add(x.p.id)} className="rounded-full border p-1"><Plus size={13}/></button><button onClick={()=>setCart(c=>{const y={...c};delete y[x.p.id];return y})}><Trash2 size={15}/></button></span></div>)}<Link href="/checkout" className="btn btn-primary mt-3 block w-full text-center">Lanjut Checkout · {rupiah(total)}</Link></aside>}</div>;
 }
