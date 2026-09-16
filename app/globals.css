@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+
+:root { --cream: #fffaf1; --orange: #e97827; --brown: #2d241f; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--cream); color: var(--brown); font-family: Arial, Helvetica, sans-serif; }
+.container { max-width: 1120px; margin: auto; padding: 0 20px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 18px; font-weight: 700; }
+.btn-primary { background: var(--orange); color: white; }
+.card { background: white; border: 1px solid #eee3d7; border-radius: 20px; box-shadow: 0 6px 20px rgba(45,36,31,.06); }
