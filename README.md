@@ -21,6 +21,7 @@ Website jastip makanan untuk **N for Eat Jastip**.
 - Tracking order dengan nomor order + nomor WhatsApp
 - Edge Functions `create-order` dan `track-order`
 - GitHub Actions build check
+- Vercel Git integration terhubung ke project `jastip-n-go-ecatalog`
 
 ## Menjalankan lokal
 ```bash
