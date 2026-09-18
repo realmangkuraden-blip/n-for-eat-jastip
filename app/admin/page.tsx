@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const statuses = ['pending_payment','payment_submitted','payment_verified','processing','shopping','purchased','delivering','completed','cancelled']
+const statuses = ['pending_payment','payment_verified','shopping','purchased','delivering','completed','cancelled']
 const labels: Record<string,string> = {pending_payment:'Menunggu pembayaran',payment_submitted:'Bukti pembayaran dikirim',payment_verified:'Pembayaran terverifikasi',processing:'Diproses',shopping:'Sedang dibelikan',purchased:'Sudah dibeli',delivering:'Dikirim',completed:'Selesai',cancelled:'Dibatalkan'}
 const rupiah=(n:number)=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n)
 type Order={id:string;order_number:string;status:string;customer_name:string;customer_phone:string;delivery_city:string;delivery_address:string;total:number;created_at:string}
