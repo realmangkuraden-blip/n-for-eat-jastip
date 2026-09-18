@@ -5,14 +5,13 @@ export async function GET() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
-    .select('id,name,slug,description,image_url,selling_price,jastip_fee,is_available,is_featured,is_bestseller,is_promo,category:categories(name,slug)')
+    .select('id,name,slug,description,image_url,selling_price,jastip_fee,is_available,is_featured,is_bestseller,is_promo,product_categories(category:categories(name,slug))')
     .eq('is_available', true)
     .order('is_featured', { ascending: false })
     .order('name')
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json(data ?? [])
+  const result=(data||[]).map((p:any)=>({...p,categories:(p.product_categories||[]).map((x:any)=>x.category).filter(Boolean),product_categories:undefined}))
+  return NextResponse.json(result)
 }
