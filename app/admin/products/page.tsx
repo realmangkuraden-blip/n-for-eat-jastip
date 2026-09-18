@@ -55,7 +55,7 @@ export default function Products(){
   if(productId){
    const {error:deleteError}=await supabase.from('product_categories').delete().eq('product_id',productId)
    if(deleteError){setMsg(deleteError.message);return}
-   if(categoryIds.length){const {error:insertError}=await supabase.from('product_categories').insert(categoryIds.map(category_id=>({product_id:productId,category_id})));if(insertError){setMsg(insertError.message);return}}
+   if(categoryIds.length){const {error:insertError}=await supabase.from('product_categories').insert(categoryIds.map((category_id:string)=>({product_id:productId,category_id})));if(insertError){setMsg(insertError.message);return}}
   }
   setMsg('Produk tersimpan.');resetForm();await load()
  }
