@@ -1,9 +1,17 @@
 @import 'tailwindcss';
 
-:root { --cream: #fffaf1; --orange: #e97827; --brown: #2d241f; }
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--cream); color: var(--brown); font-family: Arial, Helvetica, sans-serif; }
-.container { max-width: 1120px; margin: auto; padding: 0 20px; }
-.btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 18px; font-weight: 700; }
-.btn-primary { background: var(--orange); color: white; }
-.card { background: white; border: 1px solid #eee3d7; border-radius: 20px; box-shadow: 0 6px 20px rgba(45,36,31,.06); }
+:root { --cream:#fffaf1; --orange:#e97827; --orange-dark:#c85e14; --brown:#2d241f; --muted:#756b64; --line:#eee3d7; }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; background:var(--cream); color:var(--brown); font-family:Arial,Helvetica,sans-serif; }
+button,input,textarea { font:inherit; }
+.container { max-width:1160px; margin:auto; padding:0 20px; }
+.btn { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; padding:12px 18px; font-weight:800; transition:.18s ease; }
+.btn:hover { transform:translateY(-1px); }
+.btn-primary { background:var(--orange); color:white; box-shadow:0 8px 18px rgba(233,120,39,.18); }
+.btn-primary:hover { background:var(--orange-dark); }
+.card { background:white; border:1px solid var(--line); border-radius:24px; box-shadow:0 8px 24px rgba(45,36,31,.055); }
+.soft-card { background:linear-gradient(135deg,#fff3df,#fffaf1); border:1px solid #f3ddc3; border-radius:28px; }
+.product-card { overflow:hidden; transition:.2s ease; }
+.product-card:hover { transform:translateY(-3px); box-shadow:0 14px 30px rgba(45,36,31,.09); }
+.safe-bottom { padding-bottom:120px; }
