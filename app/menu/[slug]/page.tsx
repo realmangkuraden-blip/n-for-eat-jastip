@@ -36,7 +36,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
     <nav className="mb-6 text-sm opacity-60"><Link href="/">Home</Link> / <Link href="/menu">Menu</Link> / <span>{product.name}</span></nav>
     <article className="card grid overflow-hidden md:grid-cols-2">
-      <div className="flex min-h-[320px] items-center justify-center bg-[#fff1dc]">{product.image_url ? <img src={product.image_url} alt={product.name} className="h-full max-h-[520px] w-full object-cover" /> : <span className="text-8xl">🍴</span>}</div>
+      <div className="flex min-h-[320px] items-center justify-center bg-[#fff1dc]">{product.image_url ? <img src={product.image_url} alt={product.name + ' - GO JASTIP 4N'} className="h-full max-h-[520px] w-full object-cover" loading="eager" /> : <span className="text-8xl">🍴</span>}</div>
       <div className="p-7 md:p-10"><div className="text-sm font-bold uppercase opacity-50">{category?.name || 'Menu GO JASTIP 4N'}</div><h1 className="mt-2 text-4xl font-black">{product.name}</h1><p className="mt-4 leading-7 opacity-70">{product.description || 'Pesan menu ini melalui GO JASTIP 4N.'}</p><div className="mt-7 space-y-2 text-sm opacity-70"><div>Harga makanan: <b>{rupiah(price)}</b></div><div>Jasa titip: <b>{rupiah(fee)}</b></div></div><div className="mt-5 text-2xl font-black text-[#e97827]">{rupiah(total)}</div><AddToCartButton productId={product.id} /><Link href="/menu" className="btn mt-3 block w-full border text-center">← Kembali ke Menu</Link></div>
     </article>
   </main>
